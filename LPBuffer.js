@@ -20,10 +20,16 @@ LongPollBuffer.prototype.reset = function () {
 	return this.send(this.initState());
 }
 
+LongPollBuffer.prototype.isValidResponder = function () {
+	return ('function' === typeof(this.responder));
+}
+
 /*
  * send updates or init?
  */
 LongPollBuffer.prototype.check = function (responder, last) {
+	//if responder is called with undefined, just release responder ...
+	if (this.isValidResponder()) this.responder();
 	this.responder = responder;
 	return (last && this.last_hash === last) ? this.send() : this.reset();
 }
@@ -43,7 +49,7 @@ LongPollBuffer.prototype.send = function (data) {
 		this.queue.push ({data:ud, hash:hash});
 	}
 	if (0 == this.queue.length) return 0; ///nothing to be done, keep it quiet
-	if (!('function' === typeof(this.responder))) return 0; 				/// no sender, nothing to be done, keep it quiet
+	if (!this.isValidResponder()) return 0; 				/// no sender, nothing to be done, keep it quiet
 	var update = [];
 	var last;
 	while(this.queue.length) {
