@@ -1,26 +1,40 @@
-HTTP_LongPollClient = function (url, cbmap) {
-	url = url || {};
-	url.schema = url.schema || 'http';
-	url.port = url.port || '80';
-	url.address = url.address || 'localhost';
-	this.url = url;
-	this.consumer = new LongPollConsumer();
-	var self = this;
-	cbmap = cbmap || {};
+HTTP_LongPollClient = function (url,access_level,cb_map) {
+	var url = url || {};
 
-	cbmap.cb = ('function' == typeof(cbmap.cb)) ? cbmap.cp : function (data) {console.log('default handler: ', data)};
+	var address = url.address || 'localhost';
+	var port = url.port || 80;
+	var schema = url.schema || 'http';
 
-	function hook () {
-		var request = new Request (
-				url.schema, url.address, url.port, url.command, {last : self.consumer.last}, 
-				function (data) {
-					console.log(data);
-					var waiting = self.consumer.consume(data);
-					hook();
-					cbmap.cb(waiting);
-				}, 
-				cbmap.errcb, cbmap.downcb
-		);
+	var consumer = new LongPollConsumer();
+	var cb_map = cb_map || {};
+
+	//var update_cb =  ('function' === typeof(cb_map.update)) ? cb_map.update : function (update) {console.log(update)};
+	function is_buffer_ready_valid () {
+		return ('function' === typeof(cb_map.buffer_ready));
 	}
-	hook();
+
+	function safe_cb (cb) {
+		if ('function' === typeof(cb)) return cb.apply(null, Array.prototype.slice.call(arguments, 1));
+		return undefined;
+	}
+
+	this.check = function (command, data) {
+		var self = this;
+		data = data || {};
+		data.last_update = consumer.last;
+		data.hers_session= consumer.sid;
+
+		command = '/'+(access_level || '')+'/noop';
+		var request = new Request (schema, address, port, command, data, function (resp) {
+			var bfr = consumer.buffer.length;
+			if (consumer.consume(resp)) {
+				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
+			}
+
+
+			consumer.consume(resp) && is_buffer_ready_valid() && cb_map.buffer_ready(consumer.buffer.length);
+		});
+	}
+	this.check ();
+	this.next = function () {return consumer.next();}
 }

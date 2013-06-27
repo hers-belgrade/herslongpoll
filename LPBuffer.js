@@ -16,7 +16,6 @@ LongPollBuffer = function (init_state_cb) {
 LongPollBuffer.prototype.reset = function () {
 	this.queue = [];
 	this.last_hash = null;
-	console.log(this);
 	return this.send(this.initState());
 }
 
@@ -30,6 +29,7 @@ LongPollBuffer.prototype.isValidResponder = function () {
 LongPollBuffer.prototype.check = function (responder, last) {
 	//if responder is called with undefined, just release responder ...
 	if (this.isValidResponder()) this.responder();
+	console.log('WILL CHECK');
 	this.responder = responder;
 	return (last && this.last_hash === last) ? this.send() : this.reset();
 }
@@ -48,6 +48,7 @@ LongPollBuffer.prototype.send = function (data) {
 			.digest('hex');
 		this.queue.push ({data:ud, hash:hash});
 	}
+	console.log('to send ... ', this.queue.length,' valid responder? ',this.isValidResponder());
 	if (0 == this.queue.length) return 0; ///nothing to be done, keep it quiet
 	if (!this.isValidResponder()) return 0; 				/// no sender, nothing to be done, keep it quiet
 	var update = [];

@@ -1,22 +1,28 @@
 LongPollConsumer = function () {
 	this.last = undefined;
 	this.buffer = [];
+	this.sid = undefined;
 }
 
 LongPollConsumer.prototype.consume = function (update) {
 	if (!update) return;
+	if (update.sid) this.sid = update.sid;
+	if (!this.sid) return;
+	update = update.update;
 	if (!(update instanceof Array)) return;
 	/// if buffer is empty raise dirty ... if not, consumer should drain him out first ....
-	var should_raise = this.buffer.length;
 	while (update.length) {
 		var u = update.shift();
-		this.last = u.hash;
-		this.buffer.push (u);
+		try {
+			u.data = JSON.parse(u.data);
+			this.buffer.push (u);
+			this.last = u.hash;
+		}catch (e) {
+		}
 	}
+
+	console.log('have '+this.buffer.length+' updates pending');
 	return this.buffer.length;
 }
 
-
-module.exports = {
-	LongPollConsumer : LongPollConsumer
-}
+LongPollConsumer.prototype.next = function () {return (this.buffer.length)?this.buffer.shift():undefined;}
