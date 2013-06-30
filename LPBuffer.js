@@ -6,7 +6,9 @@ LongPollBuffer = function (init_state_cb) {
 	this.responder = null;
 
 	this.initState = function () {
-		return ('function' === typeof(init_state_cb)) ? init_state_cb() : undefined;
+		var ret = ('function' === typeof(init_state_cb)) ? init_state_cb() : {};
+		ret.init = true;
+		return ret;
 	}
 }
 
