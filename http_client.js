@@ -18,23 +18,34 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 		return undefined;
 	}
 
-	this.check = function (command, data) {
+	this.check = function () {
 		var self = this;
-		data = data || {};
+		var data = {};
 		data.last_update = consumer.last;
 		data.hers_session= consumer.sid;
-
-		command = '/'+(access_level || '')+'/noop';
+		var command = '/'+(access_level || '')+'/noop';
+		
 		var request = new Request (schema, address, port, command, data, function (resp) {
 			var bfr = consumer.buffer.length;
 			if (consumer.consume(resp)) {
 				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
 			}
-
-
 			consumer.consume(resp) && is_buffer_ready_valid() && cb_map.buffer_ready(consumer.buffer.length);
+			self.check();
 		});
 	}
+
+	this.do_command = function (request, data, cb) {
+		var self = this;
+
+		var command = '/'+(access_level || '')+'/'+request;
+		data = data || {};
+		data.hers_session = consumer.sid;
+		var request = new Request (schema, address, port, command, data, function (resp) {
+			console.log('DOBILI SMO ODGOVOR NA KOMANDU, STA GOD TO BILO ....');
+		});
+	}
+
 	this.check ();
 	this.next = function () {return consumer.next();}
 }
