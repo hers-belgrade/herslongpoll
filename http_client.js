@@ -4,6 +4,7 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 	var address = url.address || 'localhost';
 	var port = url.port || 80;
 	var schema = url.schema || 'http';
+	var method = url.method || 'POST';
 
 	var consumer = new LongPollConsumer();
 	var cb_map = cb_map || {};
@@ -25,7 +26,7 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 		data.hers_session= consumer.sid;
 		var command = '/'+(access_level || '')+'/noop';
 		
-		var request = new Request (schema, address, port, command, data, function (resp) {
+		var request = new Request (schema, address, port, command, method, data, function (resp) {
 			var bfr = consumer.buffer.length;
 			if (consumer.consume(resp)) {
 				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
@@ -41,7 +42,7 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 		var command = '/'+(access_level || '')+'/'+request;
 		data = data || {};
 		data.hers_session = consumer.sid;
-		var request = new Request (schema, address, port, command, data, function (resp) {
+		var request = new Request (schema, address, port, command, method, data, function (resp) {
 			console.log('DOBILI SMO ODGOVOR NA KOMANDU, STA GOD TO BILO ....');
 		});
 	}
