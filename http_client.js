@@ -9,6 +9,11 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 	var consumer = new LongPollConsumer();
 	var cb_map = cb_map || {};
 
+
+	var error_to = undefined;
+	var error_cnt = 0;
+	var error_reconnect_sec = 1;
+
 	//var update_cb =  ('function' === typeof(cb_map.update)) ? cb_map.update : function (update) {console.log(update)};
 	function is_buffer_ready_valid () {
 		return ('function' === typeof(cb_map.buffer_ready));
@@ -32,7 +37,19 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
 			}
 			consumer.consume(resp) && is_buffer_ready_valid() && cb_map.buffer_ready(consumer.buffer.length);
+			error_cnt = 0;
+			error_reconnect_sec = 1;
 			self.check();
+		},
+		function () {
+			error_cnt ++;
+			if (error_cnt >= 5) {
+				error_cnt = 0;
+				error_reconnect_sec++;
+			}
+
+			console.log('will try again in '+error_reconnect_sec+' seconds');
+			error_to = setTimeout(function () {self.check()}, error_reconnect_sec*1000);
 		});
 	}
 
@@ -42,8 +59,8 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 		var command = '/'+(access_level || '')+'/'+request;
 		data = data || {};
 		data.hers_session = consumer.sid;
-		var request = new Request (schema, address, port, command, method, data, function (resp) {
-			console.log('DOBILI SMO ODGOVOR NA KOMANDU, STA GOD TO BILO ....');
+		var request = new Request (schema, address, port, command, method, data, function (resp) {}, function () {
+			console.log(' ERROR CALL BACK .... STA SAD ?', arguments);
 		});
 	}
 
