@@ -1,4 +1,4 @@
-HTTP_LongPollClient = function (url,access_level,cb_map) {
+HTTP_LongPollClient = function (url,cb_map) {
 	var url = url || {};
 
 	var address = url.address || 'localhost';
@@ -29,14 +29,17 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 		var data = {};
 		data.last_update = consumer.last;
 		data.hers_session= consumer.sid;
-		var command = '/'+(access_level || '')+'/noop';
+
+		var command = '/noop';
 		
 		var request = new Request (schema, address, port, command, method, data, function (resp) {
 			var bfr = consumer.buffer.length;
 			if (consumer.consume(resp)) {
 				safe_cb(cb_map[(bfr == 0)?'buffer_ready':'buffer_updated'], consumer);
 			}
+
 			consumer.consume(resp) && is_buffer_ready_valid() && cb_map.buffer_ready(consumer.buffer.length);
+
 			error_cnt = 0;
 			error_reconnect_sec = 1;
 			self.check();
@@ -56,7 +59,7 @@ HTTP_LongPollClient = function (url,access_level,cb_map) {
 	this.do_command = function (request, data, cb) {
 		var self = this;
 
-		var command = '/'+(access_level || '')+'/'+request;
+		var command = '/'+request;
 		data = data || {};
 		data.hers_session = consumer.sid;
 		var request = new Request (schema, address, port, command, method, data, function (resp) {}, function () {
