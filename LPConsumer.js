@@ -2,26 +2,31 @@ LongPollConsumer = function () {
 	this.last = undefined;
 	this.buffer = [];
 	this.sid = undefined;
+	this.sid_name = undefined;
 }
 
 LongPollConsumer.prototype.consume = function (update) {
-	if (!update) return;
-	if (update.sid) this.sid = update.sid;
-	if (!this.sid) return;
-	update = update.update;
-	if (!(update instanceof Array)) return;
-	/// if buffer is empty raise dirty ... if not, consumer should drain him out first ....
-	while (update.length) {
-		var u = update.shift();
-		try {
-			u.data = JSON.parse(u.data);
-			this.buffer.push (u);
-			this.last = u.hash;
-		}catch (e) {
-		}
+	if (!update || !(update instanceof Array) || !update.length) return;
+
+	var skd = update.shift();
+	if (!skd || 'object' != typeof(skd))  {
+		console.log('invalid session key, session ID map ...',skd);
+		return;
+	}
+	for (var name in skd) {
+		this.sid_name = name;
+		this.sid = skd[name];
+		break;
 	}
 
-	console.log('have '+this.buffer.length+' updates pending');
+	var ul = update.shift();
+	if (!ul  || !ul.length) {
+		console.log('invalid update array ...', ul);
+		return;
+	}
+	while (ul.length) {
+		this.buffer.push (ul.shift());
+	}
 	return this.buffer.length;
 }
 

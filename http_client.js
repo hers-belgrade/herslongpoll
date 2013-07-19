@@ -27,10 +27,9 @@ HTTP_LongPollClient = function (url,cb_map) {
 	this.check = function () {
 		var self = this;
 		var data = {};
-		data.last_update = consumer.last;
-		data.hers_session= consumer.sid;
+		data[consumer.sid_name] = consumer.sid;
 
-		var command = '/noop';
+		var command = '/';
 		
 		var request = new Request (schema, address, port, command, method, data, function (resp) {
 			var bfr = consumer.buffer.length;

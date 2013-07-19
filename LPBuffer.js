@@ -6,9 +6,7 @@ LongPollBuffer = function (init_state_cb) {
 	this.responder = null;
 
 	this.initState = function () {
-		var ret = ('function' === typeof(init_state_cb)) ? init_state_cb() : {};
-		ret.init = true;
-		return ret;
+		return ('function' === typeof(init_state_cb)) ? init_state_cb() : {};
 	}
 }
 
@@ -18,7 +16,7 @@ LongPollBuffer = function (init_state_cb) {
 LongPollBuffer.prototype.reset = function () {
 	this.queue = [];
 	this.last_hash = null;
-	return this.send(this.initState());
+	return this.send(this.initState(), true);
 }
 
 LongPollBuffer.prototype.isValidResponder = function () {
@@ -40,7 +38,7 @@ LongPollBuffer.prototype.check = function (responder, last) {
 /*
  * will send updates to responder or keep quiet
  */
-LongPollBuffer.prototype.send = function (data) {
+LongPollBuffer.prototype.send = function (data, is_init) {
 	if (data) {
 		var ud = JSON.stringify(data);
 		var hash = Crypto.createHash ('sha256')
@@ -48,7 +46,7 @@ LongPollBuffer.prototype.send = function (data) {
 			//prevent same messages problem, gimme some sugar, baby .... :D
 			.update(Crypto.randomBytes(256).toString())
 			.digest('hex');
-		this.queue.push ({data:ud, hash:hash});
+		this.queue.push ({data:ud, hash:hash, is_init : is_init});
 	}
 	console.log('to send ... ', this.queue.length,' valid responder? ',this.isValidResponder());
 	if (0 == this.queue.length) return 0; ///nothing to be done, keep it quiet
