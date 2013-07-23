@@ -1,4 +1,5 @@
 HTTP_LongPollClient = function (url,id_params,cb_map) {
+	var self = this;
 	var url = url || {};
 
 	var address = url.address || 'localhost';
@@ -6,7 +7,11 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 	var schema = url.schema || 'http';
 	var method = url.method || 'POST';
 
-	var consumer = new LongPollConsumer();
+	var consumer = new LongPollConsumer({reset_cb: function () {
+		delete this.sid_name;
+		delete this.sid;
+		self.check();
+	}});
 	var cb_map = cb_map || {};
 
 
@@ -27,6 +32,7 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 	this.check = function () {
 		var self = this;
 		var data = {};
+
 		if (!consumer.sid_name) {
 			data.name = id_params.name;
 			data.roles= id_params.roles;
@@ -35,7 +41,8 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 		}
 
 		var command = '/';
-		
+	
+		var old_sid_name = consumer.sid_name;	
 		var request = new Request (schema, address, port, command, method, data, function (resp) {
 			var bfr = consumer.buffer.length;
 			if (consumer.consume(resp)) {
@@ -46,6 +53,10 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 
 			error_cnt = 0;
 			error_reconnect_sec = 1;
+			if (old_sid_name && consumer.sid_name != old_sid_name) {
+				console.log('you should ignore this one and never again ask for check ....');
+			 	return;
+			}
 			self.check();
 		},
 		function () {

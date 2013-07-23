@@ -1,8 +1,9 @@
-LongPollConsumer = function () {
+LongPollConsumer = function (cb_map) {
 	this.last = undefined;
 	this.buffer = [];
 	this.sid = undefined;
 	this.sid_name = undefined;
+	this.cbs = cb_map || {};
 }
 
 LongPollConsumer.prototype.consume = function (update) {
@@ -13,10 +14,17 @@ LongPollConsumer.prototype.consume = function (update) {
 		console.log('invalid session key, session ID map ...',skd);
 		return;
 	}
+
+	var old_sid_name = this.sid_name;
+
 	for (var name in skd) {
 		this.sid_name = name;
 		this.sid = skd[name];
 		break;
+	}
+
+	if (old_sid_name && old_sid_name != this.sid_name) {
+		if ('function' === typeof(this.cbs.reset_cb)) this.cbs.reset_cb.call(this);
 	}
 
 	var ul = update.shift();
