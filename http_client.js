@@ -1,4 +1,4 @@
-HTTP_LongPollClient = function (url,cb_map) {
+HTTP_LongPollClient = function (url,id_params,cb_map) {
 	var url = url || {};
 
 	var address = url.address || 'localhost';
@@ -27,7 +27,12 @@ HTTP_LongPollClient = function (url,cb_map) {
 	this.check = function () {
 		var self = this;
 		var data = {};
-		data[consumer.sid_name] = consumer.sid;
+		if (!consumer.sid_name) {
+			data.name = id_params.name;
+			data.roles= id_params.roles;
+		}else{
+			data[consumer.sid_name] = consumer.sid;
+		}
 
 		var command = '/';
 		
@@ -60,7 +65,7 @@ HTTP_LongPollClient = function (url,cb_map) {
 
 		var command = '/'+request;
 		data = data || {};
-		data.hers_session = consumer.sid;
+		data[consumer.sid_name] = consumer.sid;
 		var request = new Request (schema, address, port, command, method, data, function (resp) {}, function () {
 			console.log(' ERROR CALL BACK .... STA SAD ?', arguments);
 		});
