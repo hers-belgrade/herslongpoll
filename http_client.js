@@ -33,6 +33,8 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 		var self = this;
 		var data = {};
 
+		id_params = id_params || {name:'', roles:[]};
+
 		if (!consumer.sid_name) {
 			data.name = id_params.name;
 			data.roles= id_params.roles;
