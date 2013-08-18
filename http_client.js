@@ -65,7 +65,9 @@ HTTP_LongPollClient = function (url,id_params,cb_map) {
 			error_cnt ++;
 			if (error_cnt >= 5) {
 				error_cnt = 0;
-				error_reconnect_sec++;
+        if(error_reconnect_sec<3){
+          error_reconnect_sec++;
+        }
 			}
 
 			console.log('will try again in '+error_reconnect_sec+' seconds');
